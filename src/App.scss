@@ -1,0 +1,51 @@
+.app {
+  max-width: 500px;
+  padding-top: 32px;
+  margin: 0 auto;
+}
+
+$normal-border: 1px solid #444;
+$bold-border: 2px solid #444;
+
+.sudoku {
+  border-collapse: collapse;
+
+  &__row:first-child &__cell {
+    border-top: $bold-border;
+  }
+
+  &__cell:first-child {
+    border-left: $bold-border;
+  }
+
+  &__cell:last-child {
+    border-right: $bold-border;
+  }
+
+  &__cell:nth-of-type(3n) {
+    border-right: $bold-border;
+  }
+
+  &__row:last-child &__cell,
+  &__row:nth-of-type(3n) &__cell {
+    border-bottom: $bold-border;
+  }
+
+  &__cell {
+    border: $normal-border;
+    width: 1.5em;
+    height: 1.5em;
+    font-size: 30px;
+    box-sizing: border-box;
+  }
+
+  &__cell-input {
+    font-size: 30px;
+    width: 1.5em;
+    height: 1.5em;
+    padding: 0;
+    box-sizing: border-box;
+    text-align: center;
+    border: none;
+  }
+}
