@@ -39,6 +39,16 @@ $bold-border: 2px solid #444;
     box-sizing: border-box;
   }
 
+  &__cell--emphasize-bg,
+  &__cell--emphasize-bg &__cell-input {
+    background: rgba(50, 50, 50, 0.05);
+  }
+
+  &__cell--emphasize-number &__cell-input {
+    border: 3px solid blue;
+    font-weight: 600;
+  }
+
   &__cell-input {
     font-size: 30px;
     width: 1.5em;

@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import classes from 'classnames'
 import './App.scss'
 import { CellType, RowType, GridType, Coordinate, EMPTY_CELL } from './types'
 import { initialGrid } from './data'
@@ -6,12 +7,21 @@ import { initialGrid } from './data'
 interface SudokuCellProps {
   value: CellType
   onValueChange: (newValue: CellType) => void
+  onFocus: () => void
+  shouldEmphasizeBackground: (value: CellType) => boolean
+  shouldEmphasizeNumber: (value: CellType) => boolean
 }
 
 const isClearKey = (key: string) => key === 'Backspace' || key === 'Delete'
 const isNumberKey = (key: string) => /[1-9]/.test(key)
 
-const SudokuCell = ({ value, onValueChange }: SudokuCellProps) => {
+const SudokuCell = ({
+  value,
+  onValueChange,
+  onFocus,
+  shouldEmphasizeBackground,
+  shouldEmphasizeNumber
+}: SudokuCellProps) => {
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     e.preventDefault()
 
@@ -27,14 +37,20 @@ const SudokuCell = ({ value, onValueChange }: SudokuCellProps) => {
     onValueChange(newValue)
   }
 
+  const className = classes('sudoku__cell', {
+    'sudoku__cell--emphasize-bg': shouldEmphasizeBackground(value),
+    'sudoku__cell--emphasize-number': shouldEmphasizeNumber(value)
+  })
+
   return (
-    <td className="sudoku__cell">
+    <td className={className}>
       <input
         className="sudoku__cell-input"
         type="text"
         value={value === EMPTY_CELL ? '' : value}
         onChange={() => {}}
         onKeyDown={handleKeyDown}
+        onFocus={onFocus}
       />
     </td>
   )
@@ -43,9 +59,18 @@ const SudokuCell = ({ value, onValueChange }: SudokuCellProps) => {
 interface SudokuRowProps {
   row: RowType
   onCellValueChange: (column: number, newValue: CellType) => void
+  onCellFocus: (column: number) => void
+  shouldEmphasizeBackground: (column: number, value: CellType) => boolean
+  shouldEmphasizeNumber: (column: number, value: CellType) => boolean
 }
 
-const SudokuRow = ({ row, onCellValueChange }: SudokuRowProps) => {
+const SudokuRow = ({
+  row,
+  onCellValueChange,
+  onCellFocus,
+  shouldEmphasizeBackground,
+  shouldEmphasizeNumber
+}: SudokuRowProps) => {
   return (
     <tr className="sudoku__row">
       {row.map((cell, index) => (
@@ -53,6 +78,11 @@ const SudokuRow = ({ row, onCellValueChange }: SudokuRowProps) => {
           key={index}
           value={cell}
           onValueChange={newValue => onCellValueChange(index, newValue)}
+          onFocus={() => onCellFocus(index)}
+          shouldEmphasizeBackground={value =>
+            shouldEmphasizeBackground(index, value)
+          }
+          shouldEmphasizeNumber={value => shouldEmphasizeNumber(index, value)}
         />
       ))}
     </tr>
@@ -62,9 +92,26 @@ const SudokuRow = ({ row, onCellValueChange }: SudokuRowProps) => {
 interface SudokuProps {
   grid: GridType
   onGridValueChange: (coords: Coordinate, newValue: CellType) => void
+  onCellFocus: (row: number, column: number) => void
+  shouldEmphasizeNumber: (
+    row: number,
+    column: number,
+    value: CellType
+  ) => boolean
+  shouldEmphasizeBackground: (
+    row: number,
+    column: number,
+    value: CellType
+  ) => boolean
 }
 
-const Sudoku = ({ grid, onGridValueChange }: SudokuProps) => {
+const Sudoku = ({
+  grid,
+  onGridValueChange,
+  onCellFocus,
+  shouldEmphasizeBackground,
+  shouldEmphasizeNumber
+}: SudokuProps) => {
   return (
     <table className="sudoku">
       <tbody>
@@ -74,6 +121,13 @@ const Sudoku = ({ grid, onGridValueChange }: SudokuProps) => {
             row={row}
             onCellValueChange={(column, newValue) =>
               onGridValueChange([column, index], newValue)
+            }
+            onCellFocus={column => onCellFocus(index, column)}
+            shouldEmphasizeBackground={(column, value) =>
+              shouldEmphasizeBackground(index, column, value)
+            }
+            shouldEmphasizeNumber={(column, value) =>
+              shouldEmphasizeNumber(index, column, value)
             }
           />
         ))}
@@ -95,13 +149,53 @@ const updateCell = (grid: GridType, coords: Coordinate, value: CellType) => {
 
 const App = () => {
   const [grid, setGrid] = useState<GridType>(initialGrid)
+  const [activeCellCoords, setActiveCellCoords] = useState<Coordinate | null>(
+    null
+  )
 
   const handleGridValueChange = (coords: Coordinate, value: CellType) => {
     setGrid(updateCell(grid, coords, value))
   }
+
+  const handleCellFocus = (row: number, column: number) => {
+    setActiveCellCoords([column, row])
+  }
+
+  const shouldEmphasizeBackground = (
+    row: number,
+    column: number,
+    value: CellType
+  ) => {
+    if (!activeCellCoords) {
+      return false
+    }
+
+    const [activeColumn, activeRow] = activeCellCoords
+    return activeColumn === column || activeRow === row
+  }
+
+  const shouldEmphasizeNumber = (
+    row: number,
+    column: number,
+    value: CellType
+  ) => {
+    if (!activeCellCoords || value === EMPTY_CELL) {
+      return false
+    }
+
+    const [activeColumn, activeRow] = activeCellCoords
+    return grid[activeRow][activeColumn] === value
+  }
+
   return (
     <div className="app">
-      <Sudoku grid={grid} onGridValueChange={handleGridValueChange} />
+      <Sudoku
+        grid={grid}
+        onGridValueChange={handleGridValueChange}
+        onCellFocus={handleCellFocus}
+        shouldEmphasizeBackground={shouldEmphasizeBackground}
+        shouldEmphasizeNumber={shouldEmphasizeNumber}
+      />
     </div>
   )
 }
