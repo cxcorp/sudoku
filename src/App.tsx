@@ -10,6 +10,7 @@ interface SudokuCellProps {
   onFocus: () => void
   shouldEmphasizeBackground: (value: CellType) => boolean
   shouldEmphasizeNumber: (value: CellType) => boolean
+  shouldHighlightError: (value: CellType) => boolean
 }
 
 const isClearKey = (key: string) => key === 'Backspace' || key === 'Delete'
@@ -20,7 +21,8 @@ const SudokuCell = ({
   onValueChange,
   onFocus,
   shouldEmphasizeBackground,
-  shouldEmphasizeNumber
+  shouldEmphasizeNumber,
+  shouldHighlightError
 }: SudokuCellProps) => {
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     e.preventDefault()
@@ -39,7 +41,8 @@ const SudokuCell = ({
 
   const className = classes('sudoku__cell', {
     'sudoku__cell--emphasize-bg': shouldEmphasizeBackground(value),
-    'sudoku__cell--emphasize-number': shouldEmphasizeNumber(value)
+    'sudoku__cell--emphasize-number': shouldEmphasizeNumber(value),
+    'sudoku__cell--error': shouldHighlightError(value)
   })
 
   return (
@@ -62,6 +65,7 @@ interface SudokuRowProps {
   onCellFocus: (column: number) => void
   shouldEmphasizeBackground: (column: number, value: CellType) => boolean
   shouldEmphasizeNumber: (column: number, value: CellType) => boolean
+  shouldHighlightError: (column: number, value: CellType) => boolean
 }
 
 const SudokuRow = ({
@@ -69,7 +73,8 @@ const SudokuRow = ({
   onCellValueChange,
   onCellFocus,
   shouldEmphasizeBackground,
-  shouldEmphasizeNumber
+  shouldEmphasizeNumber,
+  shouldHighlightError
 }: SudokuRowProps) => {
   return (
     <tr className="sudoku__row">
@@ -83,6 +88,7 @@ const SudokuRow = ({
             shouldEmphasizeBackground(index, value)
           }
           shouldEmphasizeNumber={value => shouldEmphasizeNumber(index, value)}
+          shouldHighlightError={value => shouldHighlightError(index, value)}
         />
       ))}
     </tr>
@@ -103,6 +109,11 @@ interface SudokuProps {
     column: number,
     value: CellType
   ) => boolean
+  shouldHighlightError: (
+    row: number,
+    column: number,
+    value: CellType
+  ) => boolean
 }
 
 const Sudoku = ({
@@ -110,7 +121,8 @@ const Sudoku = ({
   onGridValueChange,
   onCellFocus,
   shouldEmphasizeBackground,
-  shouldEmphasizeNumber
+  shouldEmphasizeNumber,
+  shouldHighlightError
 }: SudokuProps) => {
   return (
     <table className="sudoku">
@@ -129,6 +141,9 @@ const Sudoku = ({
             shouldEmphasizeNumber={(column, value) =>
               shouldEmphasizeNumber(index, column, value)
             }
+            shouldHighlightError={(column, value) =>
+              shouldHighlightError(index, column, value)
+            }
           />
         ))}
       </tbody>
@@ -145,6 +160,73 @@ const updateCell = (grid: GridType, coords: Coordinate, value: CellType) => {
   updatedGrid[y] = updatedRow
 
   return updatedGrid
+}
+
+const hasSameNumberOnSameRow = (
+  grid: GridType,
+  row: number,
+  column: number,
+  value: number
+) => {
+  return grid[row].some((candidate, candidateColumn) => {
+    return candidate === value && candidateColumn !== column
+  })
+}
+
+const getColumnValues = (grid: GridType, column: number) => {
+  const values = []
+  for (let row = 0; row < 9; row++) {
+    values.push(grid[row][column])
+  }
+  return values
+}
+
+const hasSameNumberOnSameColumn = (
+  grid: GridType,
+  row: number,
+  column: number,
+  value: number
+) => {
+  return getColumnValues(grid, column).some(
+    (candidate, candidateRow) => candidate === value && candidateRow !== row
+  )
+}
+
+const squareIndex = (idx: number) => Math.floor(idx / 3)
+const squareBaseIndex = (squareIndex: number) => squareIndex * 3
+const squareCoords = (row: number, column: number) => [
+  squareBaseIndex(squareIndex(row)),
+  squareBaseIndex(squareIndex(column))
+]
+
+const getSquareValues = (grid: GridType, row: number, column: number) => {
+  const [squareBaseRow, squareBaseColumn] = squareCoords(row, column)
+  const values = []
+
+  for (let rowOffset = 0; rowOffset < 3; rowOffset++) {
+    for (let columnOffset = 0; columnOffset < 3; columnOffset++) {
+      values.push({
+        row: squareBaseRow + rowOffset,
+        column: squareBaseColumn + columnOffset,
+        value: grid[squareBaseRow + rowOffset][squareBaseColumn + columnOffset]
+      })
+    }
+  }
+
+  return values
+}
+
+const hasSameNumberInSameSquare = (
+  grid: GridType,
+  row: number,
+  column: number,
+  value: number
+) => {
+  return getSquareValues(grid, row, column).some(
+    candidate =>
+      candidate.value === value &&
+      (candidate.row !== row && candidate.column !== column)
+  )
 }
 
 const App = () => {
@@ -187,6 +269,22 @@ const App = () => {
     return grid[activeRow][activeColumn] === value
   }
 
+  const shouldHighlightError = (
+    row: number,
+    column: number,
+    value: CellType
+  ) => {
+    if (value === EMPTY_CELL) {
+      return false
+    }
+
+    return (
+      hasSameNumberOnSameRow(grid, row, column, value) ||
+      hasSameNumberOnSameColumn(grid, row, column, value) ||
+      hasSameNumberInSameSquare(grid, row, column, value)
+    )
+  }
+
   return (
     <div className="app">
       <Sudoku
@@ -195,6 +293,7 @@ const App = () => {
         onCellFocus={handleCellFocus}
         shouldEmphasizeBackground={shouldEmphasizeBackground}
         shouldEmphasizeNumber={shouldEmphasizeNumber}
+        shouldHighlightError={shouldHighlightError}
       />
     </div>
   )
