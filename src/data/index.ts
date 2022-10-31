@@ -11,5 +11,5 @@ export const initialGrid: GridType = [
   [u, u, 7, 9, 4, u, 8, u, 1],
   [9, 2, u, u, u, u, u, u, u],
   [6, u, u, 4, 2, u, 7, u, 8],
-  [u, 1, 4, 3, u, u, u, u, 2]
+  [u, 1, 4, 3, u, u, u, u, 2],
 ]
