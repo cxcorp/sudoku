@@ -1,3 +1,11 @@
+# sudoku
+
+It's a web sudoku.
+
+![image](https://user-images.githubusercontent.com/21111572/199128630-759408ed-e26d-42e2-a57b-121d358c7704.png)
+
+## Boilerplate README
+
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
 ## Available Scripts
